@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Chat-Bird | Real-time Web</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -20,8 +20,27 @@
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #dadbd3;
-            background-image: linear-gradient(to bottom, #00a884 0%, #00a884 127px, #dadbd3 127px, #dadbd3 100%);
+            /* Using dynamic viewport height for better mobile support */
+            height: 100dvh;
             overflow: hidden;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Desktop background stripe */
+        @media (min-width: 768px) {
+            body {
+                background-image: linear-gradient(to bottom, #00a884 0%, #00a884 127px, #dadbd3 127px, #dadbd3 100%);
+            }
+        }
+
+        /* Mobile specific background */
+        @media (max-width: 767px) {
+            body {
+                background-color: #ffffff;
+            }
         }
 
         .message-out::before {
@@ -61,64 +80,73 @@
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #ced0d1; }
         .shadow-wa { box-shadow: 0 6px 18px rgba(11,20,26,.05); }
+
+        /* Ensure smooth transitions on mobile */
+        #sidebar, #chatArea {
+            transition: transform 0.3s ease-in-out;
+        }
     </style>
 </head>
-<body class="h-screen flex items-center justify-center p-0 md:py-5">
+<body class="md:p-4 lg:p-8">
 
     <!-- Registration Overlay -->
-    <div id="authOverlay" class="fixed inset-0 bg-[#f0f2f5] z-[200] flex flex-col items-center justify-center p-6">
-        <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-lg border-t-4 border-[#00a884]">
-            <div class="text-center mb-8">
-                <div class="w-20 h-20 bg-[#00a884] rounded-full flex items-center justify-center text-white mx-auto mb-4">
-                    <i class="fas fa-dove text-4xl"></i>
+    <div id="authOverlay" class="fixed inset-0 bg-[#f0f2f5] z-[200] flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white p-6 md:p-8 rounded-lg shadow-lg border-t-4 border-[#00a884]">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 md:w-20 md:h-20 bg-[#00a884] rounded-full flex items-center justify-center text-white mx-auto mb-4">
+                    <i class="fas fa-dove text-3xl md:text-4xl"></i>
                 </div>
-                <h1 class="text-2xl font-bold text-gray-800">Welcome to Chat-Bird</h1>
-                <p class="text-gray-500 text-sm mt-2">Enter your details to start chatting</p>
+                <h1 class="text-xl md:text-2xl font-bold text-gray-800">Welcome to Chat-Bird</h1>
+                <p class="text-gray-500 text-xs md:text-sm mt-2">Enter your details to start chatting</p>
             </div>
             <div class="space-y-4">
-                <input type="text" id="myUserName" placeholder="Your Name" class="w-full border rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-[#00a884]">
-                <input type="text" id="myPhoneNumber" placeholder="Your Phone Number (e.g. 12345)" class="w-full border rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-[#00a884]">
-                <button id="startChatting" class="w-full bg-[#00a884] text-white py-3 rounded-lg font-bold hover:bg-[#008f72]">Start Chatting</button>
+                <input type="text" id="myUserName" placeholder="Your Name" class="w-full border rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-[#00a884] text-sm md:text-base">
+                <input type="text" id="myPhoneNumber" placeholder="Your Phone Number (e.g. 12345)" class="w-full border rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-[#00a884] text-sm md:text-base">
+                <button id="startChatting" class="w-full bg-[#00a884] text-white py-3 rounded-lg font-bold hover:bg-[#008f72] transition-colors text-sm md:text-base">Start Chatting</button>
             </div>
         </div>
     </div>
 
     <!-- Main App Container -->
-    <div class="bg-white w-full h-full max-w-[1600px] flex overflow-hidden md:shadow-wa relative z-10 border-gray-300 border-opacity-50 border">
+    <div class="bg-white w-full h-full max-w-[1600px] flex overflow-hidden md:shadow-wa relative z-10 md:rounded-sm border-gray-300 border-opacity-50 border">
         
         <!-- Sidebar -->
-        <div class="w-full md:w-[450px] flex-shrink-0 flex flex-col border-r border-gray-300 bg-white z-[110]" id="sidebar">
-            <div class="h-[60px] px-4 bg-[#f0f2f5] flex items-center justify-between border-b border-gray-200">
+        <div class="w-full md:w-[30%] lg:w-[450px] flex-shrink-0 flex flex-col border-r border-gray-300 bg-white z-[110]" id="sidebar">
+            <!-- Sidebar Header -->
+            <div class="h-[60px] flex-shrink-0 px-4 bg-[#f0f2f5] flex items-center justify-between border-b border-gray-200">
                 <div class="flex items-center gap-3">
                     <div class="w-9 h-9 bg-[#00a884] rounded-full flex items-center justify-center text-white shadow-sm">
                         <i class="fas fa-dove text-sm"></i>
                     </div>
                     <h1 class="font-bold text-lg text-[#008069]">Chat-Bird</h1>
                 </div>
-                <div class="flex gap-4 text-[#54656f]">
+                <div class="flex gap-2 md:gap-4 text-[#54656f]">
                     <button id="addContactBtn" class="hover:bg-gray-200 p-2 rounded-full"><i class="fas fa-comment-alt"></i></button>
                     <button id="logoutBtn" class="hover:bg-gray-200 p-2 rounded-full"><i class="fas fa-sign-out-alt"></i></button>
                 </div>
             </div>
 
-            <div class="px-4 py-3 bg-white flex items-center gap-3 border-b border-gray-100">
+            <!-- Profile Info Banner -->
+            <div class="px-4 py-3 flex-shrink-0 bg-white flex items-center gap-3 border-b border-gray-100">
                 <div class="relative">
                     <img id="myAvatar" src="https://ui-avatars.com/api/?name=?&background=00a884&color=fff" class="w-10 h-10 rounded-full bg-gray-200">
                     <div id="connectionStatus" class="absolute -bottom-1 -right-1 w-3 h-3 bg-gray-400 border-2 border-white rounded-full"></div>
                 </div>
                 <div class="flex-1 overflow-hidden">
                     <p id="myProfileLabel" class="text-sm font-semibold text-gray-800 truncate">Loading...</p>
-                    <p id="myNumberLabel" class="text-[11px] text-gray-500">Connecting to Bird-Net...</p>
+                    <p id="myNumberLabel" class="text-[11px] text-gray-500 truncate">Connecting...</p>
                 </div>
             </div>
 
-            <div class="p-2 bg-white">
+            <!-- Sidebar Search -->
+            <div class="p-2 flex-shrink-0 bg-white">
                 <div class="bg-[#f0f2f5] flex items-center rounded-lg px-3 py-1.5">
                     <i class="fas fa-search text-gray-500 text-xs mr-3"></i>
                     <input type="text" placeholder="Search contacts" class="bg-transparent text-sm w-full outline-none">
                 </div>
             </div>
 
+            <!-- Contacts List -->
             <div class="flex-1 overflow-y-auto bg-white" id="contactsList"></div>
         </div>
 
@@ -127,25 +155,25 @@
             <div class="chat-wallpaper"></div>
 
             <!-- Empty Welcome State -->
-            <div id="emptyState" class="absolute inset-0 z-[100] bg-[#f8f9fa] flex flex-col items-center justify-center p-10 text-center border-b-4 border-[#00a884]">
-                <div class="w-64 mb-8">
+            <div id="emptyState" class="absolute inset-0 z-[100] bg-[#f8f9fa] flex flex-col items-center justify-center p-6 text-center border-b-4 border-[#00a884]">
+                <div class="w-48 md:w-64 mb-6 md:mb-8">
                     <img src="https://static.whatsapp.net/rsrc.php/v3/y6/r/wa669ae5z23.png" alt="Welcome" class="mx-auto opacity-70">
                 </div>
-                <h1 class="text-2xl font-light text-[#41525d] mb-3">Chat-Bird for Web</h1>
+                <h1 class="text-xl md:text-2xl font-light text-[#41525d] mb-3">Chat-Bird for Web</h1>
                 <p class="text-xs text-[#667781] leading-relaxed max-w-sm">Select a contact to start messaging. Make sure your friend has added your number too!</p>
             </div>
 
-            <!-- Chat Header -->
-            <div id="chatHeader" class="hidden h-[60px] px-4 bg-[#f0f2f5] flex items-center justify-between z-[120] border-l border-gray-300">
-                <div class="flex items-center gap-3">
-                    <button class="md:hidden text-[#54656f] mr-2" onclick="toggleSidebar()"><i class="fas fa-arrow-left"></i></button>
-                    <img id="activeAvatar" src="" class="w-10 h-10 rounded-full">
-                    <div>
-                        <h3 id="activeName" class="font-medium text-[#111b21] text-sm md:text-base">Name</h3>
-                        <p id="activeNumber" class="text-[10px] text-[#667781]">Number</p>
+            <!-- Active Chat Header -->
+            <div id="chatHeader" class="hidden h-[60px] flex-shrink-0 px-4 bg-[#f0f2f5] flex items-center justify-between z-[120] border-l border-gray-300">
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <button class="md:hidden text-[#54656f] mr-1 p-1" onclick="toggleSidebar()"><i class="fas fa-arrow-left"></i></button>
+                    <img id="activeAvatar" src="" class="w-10 h-10 rounded-full flex-shrink-0">
+                    <div class="truncate">
+                        <h3 id="activeName" class="font-medium text-[#111b21] text-sm md:text-base truncate">Name</h3>
+                        <p id="activeNumber" class="text-[10px] text-[#667781] truncate">Number</p>
                     </div>
                 </div>
-                <div class="flex gap-5 text-[#54656f]">
+                <div class="flex gap-4 md:gap-5 text-[#54656f] flex-shrink-0">
                     <i class="fas fa-video text-sm cursor-pointer hover:text-gray-800"></i>
                     <i class="fas fa-phone-alt text-sm cursor-pointer hover:text-gray-800"></i>
                     <i class="fas fa-ellipsis-v text-sm cursor-pointer hover:text-gray-800"></i>
@@ -155,18 +183,18 @@
             <!-- Messages List -->
             <div id="messagesList" class="hidden flex-1 overflow-y-auto p-4 md:px-12 space-y-2 z-[10] scroll-smooth"></div>
 
-            <!-- Input Bar -->
-            <div id="chatInputArea" class="hidden min-h-[62px] px-4 py-2 bg-[#f0f2f5] flex items-center gap-3 z-[120] border-t border-gray-200">
+            <!-- Message Input Area -->
+            <div id="chatInputArea" class="hidden min-h-[62px] flex-shrink-0 px-2 md:px-4 py-2 bg-[#f0f2f5] flex items-center gap-2 md:gap-4 z-[120] border-t border-gray-200">
                 <button class="text-[#54656f] text-xl px-1 hover:text-gray-700"><i class="far fa-smile"></i></button>
-                <button class="text-[#54656f] text-xl px-1 hover:text-gray-700 rotate-45"><i class="fas fa-paperclip"></i></button>
+                <button class="text-[#54656f] text-xl px-1 hover:text-gray-700 rotate-45 hidden sm:block"><i class="fas fa-paperclip"></i></button>
                 
-                <div class="flex-1 bg-white rounded-lg px-4 py-2 flex items-center shadow-sm">
+                <div class="flex-1 bg-white rounded-lg px-3 md:px-4 py-2 flex items-center shadow-sm">
                     <input id="messageInput" type="text" placeholder="Type a message" 
                            class="w-full bg-transparent outline-none text-[15px] text-[#111b21] py-1"
                            autocomplete="off">
                 </div>
                 
-                <button id="sendBtn" class="text-[#54656f] text-xl p-2 hover:bg-gray-200 rounded-full transition-colors">
+                <button id="sendBtn" class="text-[#54656f] text-xl p-2 hover:bg-gray-200 rounded-full transition-colors flex-shrink-0">
                     <i id="sendIcon" class="fas fa-microphone"></i>
                 </button>
             </div>
@@ -178,12 +206,12 @@
         <div class="bg-white rounded-lg w-full max-w-md p-6 shadow-2xl">
             <h2 class="text-xl font-semibold text-[#008069] mb-4">Add Contact</h2>
             <div class="space-y-4">
-                <input type="text" id="newContactName" class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-1 focus:ring-[#00a884]" placeholder="Name">
-                <input type="text" id="newContactNumber" class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-1 focus:ring-[#00a884]" placeholder="Phone Number">
+                <input type="text" id="newContactName" class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-1 focus:ring-[#00a884] text-sm" placeholder="Name">
+                <input type="text" id="newContactNumber" class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-1 focus:ring-[#00a884] text-sm" placeholder="Phone Number">
             </div>
             <div class="mt-6 flex gap-3">
-                <button id="cancelModal" class="flex-1 py-2 text-gray-500 font-medium">Cancel</button>
-                <button id="saveContact" class="flex-1 py-2 bg-[#00a884] text-white rounded-lg font-medium shadow-md">Save Contact</button>
+                <button id="cancelModal" class="flex-1 py-2 text-gray-500 font-medium text-sm">Cancel</button>
+                <button id="saveContact" class="flex-1 py-2 bg-[#00a884] text-white rounded-lg font-medium shadow-md text-sm">Save Contact</button>
             </div>
         </div>
     </div>
@@ -224,8 +252,10 @@
         const messagesList = document.getElementById('messagesList');
         const contactsList = document.getElementById('contactsList');
         const connectionStatus = document.getElementById('connectionStatus');
+        const chatArea = document.getElementById('chatArea');
+        const sidebar = document.getElementById('sidebar');
 
-        // Check login status before everything else to prevent flicker
+        // Initial setup for mobile visibility
         if (currentUser) {
             authOverlay.classList.add('hidden');
             setupProfileUI();
@@ -299,7 +329,7 @@
                 div.className = `flex items-center gap-4 px-4 py-3 cursor-pointer border-b border-gray-100 hover:bg-[#f5f6f6] ${isActive ? 'active-contact' : ''}`;
                 div.onclick = () => selectContact(c.id);
                 div.innerHTML = `
-                    <img src="https://ui-avatars.com/api/?name=${c.name}&background=random" class="w-12 h-12 rounded-full">
+                    <img src="https://ui-avatars.com/api/?name=${c.name}&background=random" class="w-12 h-12 rounded-full flex-shrink-0">
                     <div class="flex-1 min-w-0">
                         <h4 class="font-medium text-[#111b21] truncate">${c.name}</h4>
                         <p class="text-xs text-gray-500 truncate">${c.number}</p>
@@ -331,9 +361,13 @@
             listenToMessages(contact.number);
             
             messageInput.disabled = false;
-            setTimeout(() => messageInput.focus(), 50);
-
-            if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('hidden');
+            
+            // Mobile: Hide sidebar when a chat is selected
+            if (window.innerWidth < 768) {
+                sidebar.classList.add('hidden');
+            } else {
+                setTimeout(() => messageInput.focus(), 50);
+            }
         }
 
         function listenToMessages(otherNumber) {
@@ -364,7 +398,7 @@
                 
                 wrapper.innerHTML = `
                     <div class="relative max-w-[85%] px-2.5 py-1.5 rounded-lg shadow-sm ${isMe ? 'bg-[#dcf8c6] message-out' : 'bg-white message-in'}">
-                        <p class="text-[14.5px] text-[#111b21] pr-12 whitespace-pre-wrap break-words">${msg.text}</p>
+                        <p class="text-[14px] md:text-[14.5px] text-[#111b21] pr-12 whitespace-pre-wrap break-words leading-tight">${msg.text}</p>
                         <div class="absolute bottom-1 right-2 flex items-center gap-1">
                             <span class="text-[9px] text-[#667781]">${time}</span>
                             ${isMe ? '<i class="fas fa-check-double text-[10px] text-blue-400"></i>' : ''}
@@ -394,7 +428,7 @@
                 });
                 messageInput.value = '';
                 updateSendIcon();
-                messageInput.focus();
+                if (window.innerWidth >= 768) messageInput.focus();
             } catch (err) {
                 console.error("Failed to send", err);
             }
@@ -444,7 +478,6 @@
         sendBtn.onclick = () => messageInput.value.trim() !== "" && sendMessage();
         
         document.getElementById('logoutBtn').onclick = () => { 
-            // Only clear user data, not the whole localstorage to avoid wiping system settings if any
             localStorage.removeItem('chatbird_me');
             localStorage.removeItem('chatbird_contacts_v6');
             location.reload(); 
