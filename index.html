@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat-Bird | Real-time Web</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --wa-bg: #f0f2f5;
+            --wa-green: #00a884;
+            --wa-chat-bg: #efeae2;
+            --wa-sent: #dcf8c6;
+            --wa-received: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #dadbd3;
+            background-image: linear-gradient(to bottom, #00a884 0%, #00a884 127px, #dadbd3 127px, #dadbd3 100%);
+            overflow: hidden;
+        }
+
+        .message-out::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: -8px;
+            width: 15px;
+            height: 15px;
+            background: var(--wa-sent);
+            clip-path: polygon(0 0, 0 100%, 100% 0);
+        }
+
+        .message-in::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -8px;
+            width: 15px;
+            height: 15px;
+            background: var(--wa-received);
+            clip-path: polygon(100% 0, 100% 100%, 0 0);
+        }
+
+        .chat-wallpaper {
+            background-color: var(--wa-chat-bg);
+            background-image: url("https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png");
+            background-repeat: repeat;
+            opacity: 0.06;
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .active-contact { background-color: #f5f6f6 !important; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #ced0d1; }
+        .shadow-wa { box-shadow: 0 6px 18px rgba(11,20,26,.05); }
+    </style>
+</head>
+<body class="h-screen flex items-center justify-center p-0 md:py-5">
+
+    <!-- Registration Overlay -->
+    <div id="authOverlay" class="fixed inset-0 bg-[#f0f2f5] z-[200] flex flex-col items-center justify-center p-6">
+        <div class="w-full max-w-md bg-white p-8 rounded-lg shadow-lg border-t-4 border-[#00a884]">
+            <div class="text-center mb-8">
+                <div class="w-20 h-20 bg-[#00a884] rounded-full flex items-center justify-center text-white mx-auto mb-4">
+                    <i class="fas fa-dove text-4xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-800">Welcome to Chat-Bird</h1>
+                <p class="text-gray-500 text-sm mt-2">Enter your details to start chatting</p>
+            </div>
+            <div class="space-y-4">
+                <input type="text" id="myUserName" placeholder="Your Name" class="w-full border rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-[#00a884]">
+                <input type="text" id="myPhoneNumber" placeholder="Your Phone Number (e.g. 12345)" class="w-full border rounded-lg px-4 py-3 outline-none focus:ring-2 focus:ring-[#00a884]">
+                <button id="startChatting" class="w-full bg-[#00a884] text-white py-3 rounded-lg font-bold hover:bg-[#008f72]">Start Chatting</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="bg-white w-full h-full max-w-[1600px] flex overflow-hidden md:shadow-wa relative z-10 border-gray-300 border-opacity-50 border">
+        
+        <!-- Sidebar -->
+        <div class="w-full md:w-[450px] flex-shrink-0 flex flex-col border-r border-gray-300 bg-white z-[110]" id="sidebar">
+            <div class="h-[60px] px-4 bg-[#f0f2f5] flex items-center justify-between border-b border-gray-200">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-[#00a884] rounded-full flex items-center justify-center text-white shadow-sm">
+                        <i class="fas fa-dove text-sm"></i>
+                    </div>
+                    <h1 class="font-bold text-lg text-[#008069]">Chat-Bird</h1>
+                </div>
+                <div class="flex gap-4 text-[#54656f]">
+                    <button id="addContactBtn" class="hover:bg-gray-200 p-2 rounded-full"><i class="fas fa-comment-alt"></i></button>
+                    <button id="logoutBtn" class="hover:bg-gray-200 p-2 rounded-full"><i class="fas fa-sign-out-alt"></i></button>
+                </div>
+            </div>
+
+            <div class="px-4 py-3 bg-white flex items-center gap-3 border-b border-gray-100">
+                <img id="myAvatar" src="" class="w-10 h-10 rounded-full bg-gray-200">
+                <div class="flex-1 overflow-hidden">
+                    <p id="myProfileLabel" class="text-sm font-semibold text-gray-800 truncate"></p>
+                    <p id="myNumberLabel" class="text-[11px] text-gray-500"></p>
+                </div>
+            </div>
+
+            <div class="p-2 bg-white">
+                <div class="bg-[#f0f2f5] flex items-center rounded-lg px-3 py-1.5">
+                    <i class="fas fa-search text-gray-500 text-xs mr-3"></i>
+                    <input type="text" placeholder="Search contacts" class="bg-transparent text-sm w-full outline-none">
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto bg-white" id="contactsList"></div>
+        </div>
+
+        <!-- Chat Area -->
+        <div class="flex-1 flex flex-col bg-[#efeae2] relative" id="chatArea">
+            <div class="chat-wallpaper"></div>
+
+            <!-- Empty Welcome State -->
+            <div id="emptyState" class="absolute inset-0 z-[100] bg-[#f8f9fa] flex flex-col items-center justify-center p-10 text-center border-b-4 border-[#00a884]">
+                <div class="w-64 mb-8">
+                    <img src="https://static.whatsapp.net/rsrc.php/v3/y6/r/wa669ae5z23.png" alt="Welcome" class="mx-auto opacity-70">
+                </div>
+                <h1 class="text-2xl font-light text-[#41525d] mb-3">Chat-Bird for Web</h1>
+                <p class="text-xs text-[#667781] leading-relaxed max-w-sm">Select a contact to start messaging. Make sure your friend has added your number too!</p>
+            </div>
+
+            <!-- Chat Header -->
+            <div id="chatHeader" class="hidden h-[60px] px-4 bg-[#f0f2f5] flex items-center justify-between z-[120] border-l border-gray-300">
+                <div class="flex items-center gap-3">
+                    <button class="md:hidden text-[#54656f] mr-2" onclick="toggleSidebar()"><i class="fas fa-arrow-left"></i></button>
+                    <img id="activeAvatar" src="" class="w-10 h-10 rounded-full">
+                    <div>
+                        <h3 id="activeName" class="font-medium text-[#111b21] text-sm md:text-base">Name</h3>
+                        <p id="activeNumber" class="text-[10px] text-[#667781]">Number</p>
+                    </div>
+                </div>
+                <div class="flex gap-5 text-[#54656f]">
+                    <i class="fas fa-video text-sm cursor-pointer hover:text-gray-800"></i>
+                    <i class="fas fa-phone-alt text-sm cursor-pointer hover:text-gray-800"></i>
+                    <i class="fas fa-ellipsis-v text-sm cursor-pointer hover:text-gray-800"></i>
+                </div>
+            </div>
+
+            <!-- Messages List -->
+            <div id="messagesList" class="hidden flex-1 overflow-y-auto p-4 md:px-12 space-y-2 z-[10] scroll-smooth"></div>
+
+            <!-- Input Bar -->
+            <div id="chatInputArea" class="hidden min-h-[62px] px-4 py-2 bg-[#f0f2f5] flex items-center gap-3 z-[120] border-t border-gray-200">
+                <button class="text-[#54656f] text-xl px-1 hover:text-gray-700"><i class="far fa-smile"></i></button>
+                <button class="text-[#54656f] text-xl px-1 hover:text-gray-700 rotate-45"><i class="fas fa-paperclip"></i></button>
+                
+                <div class="flex-1 bg-white rounded-lg px-4 py-2 flex items-center shadow-sm">
+                    <input id="messageInput" type="text" placeholder="Type a message" 
+                           class="w-full bg-transparent outline-none text-[15px] text-[#111b21] py-1"
+                           autocomplete="off">
+                </div>
+                
+                <button id="sendBtn" class="text-[#54656f] text-xl p-2 hover:bg-gray-200 rounded-full transition-colors">
+                    <i id="sendIcon" class="fas fa-microphone"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modalOverlay" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-[300] p-4">
+        <div class="bg-white rounded-lg w-full max-w-md p-6 shadow-2xl">
+            <h2 class="text-xl font-semibold text-[#008069] mb-4">Add Contact</h2>
+            <div class="space-y-4">
+                <input type="text" id="newContactName" class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-1 focus:ring-[#00a884]" placeholder="Name">
+                <input type="text" id="newContactNumber" class="w-full border rounded-lg px-4 py-2 outline-none focus:ring-1 focus:ring-[#00a884]" placeholder="Phone Number">
+            </div>
+            <div class="mt-6 flex gap-3">
+                <button id="cancelModal" class="flex-1 py-2 text-gray-500 font-medium">Cancel</button>
+                <button id="saveContact" class="flex-1 py-2 bg-[#00a884] text-white rounded-lg font-medium shadow-md">Save Contact</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // User's Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBO0gCQp8axtK8a4ZAmbRztIbUY6gla748",
+            authDomain: "chat-bird-app.firebaseapp.com",
+            projectId: "chat-bird-app",
+            storageBucket: "chat-bird-app.firebasestorage.app",
+            messagingSenderId: "703749044896",
+            appId: "1:703749044896:web:e25b2fe6eeda20f519e7c5"
+        };
+        
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'chat-bird-pro';
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = JSON.parse(localStorage.getItem('chatbird_me')) || null;
+        let contacts = JSON.parse(localStorage.getItem('chatbird_contacts_v6')) || [];
+        let activeContactId = null;
+        let messagesUnsubscribe = null;
+        let isAuthReady = false;
+
+        // UI Selectors
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const sendIcon = document.getElementById('sendIcon');
+        const messagesList = document.getElementById('messagesList');
+        const contactsList = document.getElementById('contactsList');
+
+        // --- AUTH PROTOCOL ---
+        async function startFirebase() {
+            try {
+                // If a token exists but doesn't match this custom config, 
+                // signInWithCustomToken will throw auth/custom-token-mismatch
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    try {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } catch (mismatchErr) {
+                        // Fallback to anonymous if the token is for a different project
+                        await signInAnonymously(auth);
+                    }
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth init error", err);
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                isAuthReady = true;
+                updateSendIcon();
+                if (currentUser) {
+                    document.getElementById('authOverlay').style.display = 'none';
+                    setupProfileUI();
+                }
+            } else {
+                isAuthReady = false;
+                updateSendIcon();
+            }
+        });
+
+        startFirebase();
+
+        function setupProfileUI() {
+            if (!currentUser) return;
+            document.getElementById('myProfileLabel').innerText = currentUser.name;
+            document.getElementById('myNumberLabel').innerText = currentUser.number;
+            document.getElementById('myAvatar').src = `https://ui-avatars.com/api/?name=${currentUser.name}&background=00a884&color=fff`;
+            renderContacts();
+        }
+
+        document.getElementById('startChatting').onclick = () => {
+            const name = document.getElementById('myUserName').value.trim();
+            const number = document.getElementById('myPhoneNumber').value.trim();
+            if (name && number) {
+                currentUser = { name, number };
+                localStorage.setItem('chatbird_me', JSON.stringify(currentUser));
+                if (isAuthReady) {
+                    document.getElementById('authOverlay').style.display = 'none';
+                    setupProfileUI();
+                } else {
+                    const btn = document.getElementById('startChatting');
+                    btn.innerText = "Connecting...";
+                    btn.disabled = true;
+                }
+            }
+        };
+
+        function renderContacts() {
+            contactsList.innerHTML = '';
+            contacts.forEach(c => {
+                const isActive = activeContactId === c.id;
+                const div = document.createElement('div');
+                div.className = `flex items-center gap-4 px-4 py-3 cursor-pointer border-b border-gray-100 hover:bg-[#f5f6f6] ${isActive ? 'active-contact' : ''}`;
+                div.onclick = () => selectContact(c.id);
+                div.innerHTML = `
+                    <img src="https://ui-avatars.com/api/?name=${c.name}&background=random" class="w-12 h-12 rounded-full">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-medium text-[#111b21] truncate">${c.name}</h4>
+                        <p class="text-xs text-gray-500 truncate">${c.number}</p>
+                    </div>
+                `;
+                contactsList.appendChild(div);
+            });
+            localStorage.setItem('chatbird_contacts_v6', JSON.stringify(contacts));
+        }
+
+        async function selectContact(id) {
+            if (!currentUser || !isAuthReady) return;
+            if (messagesUnsubscribe) messagesUnsubscribe();
+            
+            activeContactId = id;
+            const contact = contacts.find(c => c.id === id);
+            if (!contact) return;
+            
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('chatHeader').classList.remove('hidden');
+            messagesList.classList.remove('hidden');
+            document.getElementById('chatInputArea').classList.remove('hidden');
+            
+            document.getElementById('activeName').innerText = contact.name;
+            document.getElementById('activeNumber').innerText = contact.number;
+            document.getElementById('activeAvatar').src = `https://ui-avatars.com/api/?name=${contact.name}&background=random`;
+            
+            renderContacts();
+            listenToMessages(contact.number);
+            
+            messageInput.disabled = false;
+            setTimeout(() => messageInput.focus(), 50);
+
+            if (window.innerWidth < 768) document.getElementById('sidebar').classList.add('hidden');
+        }
+
+        function listenToMessages(otherNumber) {
+            if (!auth.currentUser) return; 
+            
+            const numbers = [currentUser.number, otherNumber].sort();
+            const chatId = numbers.join('_');
+            
+            const msgCollection = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+            
+            messagesUnsubscribe = onSnapshot(msgCollection, (snapshot) => {
+                const all = snapshot.docs.map(doc => doc.data());
+                const filtered = all.filter(m => m.chatId === chatId)
+                                   .sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+                renderMessages(filtered);
+            }, (error) => {
+                console.error("Snapshot error:", error);
+            });
+        }
+
+        function renderMessages(messages) {
+            messagesList.innerHTML = '';
+            messages.forEach(msg => {
+                const isMe = msg.from === currentUser.number;
+                const wrapper = document.createElement('div');
+                wrapper.className = `flex mb-1 ${isMe ? 'justify-end' : 'justify-start'}`;
+                const time = msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                
+                wrapper.innerHTML = `
+                    <div class="relative max-w-[85%] px-2.5 py-1.5 rounded-lg shadow-sm ${isMe ? 'bg-[#dcf8c6] message-out' : 'bg-white message-in'}">
+                        <p class="text-[14.5px] text-[#111b21] pr-12 whitespace-pre-wrap break-words">${msg.text}</p>
+                        <div class="absolute bottom-1 right-2 flex items-center gap-1">
+                            <span class="text-[9px] text-[#667781]">${time}</span>
+                            ${isMe ? '<i class="fas fa-check-double text-[10px] text-blue-400"></i>' : ''}
+                        </div>
+                    </div>
+                `;
+                messagesList.appendChild(wrapper);
+            });
+            messagesList.scrollTop = messagesList.scrollHeight;
+        }
+
+        async function sendMessage() {
+            const text = messageInput.value.trim();
+            if (!text || !activeContactId || !currentUser || !auth.currentUser) return;
+
+            const contact = contacts.find(c => c.id === activeContactId);
+            const chatId = [currentUser.number, contact.number].sort().join('_');
+
+            try {
+                const msgCol = collection(db, 'artifacts', appId, 'public', 'data', 'messages');
+                await addDoc(msgCol, {
+                    chatId,
+                    from: currentUser.number,
+                    to: contact.number,
+                    text: text,
+                    timestamp: serverTimestamp()
+                });
+                messageInput.value = '';
+                updateSendIcon();
+                messageInput.focus();
+            } catch (err) {
+                console.error("Failed to send", err);
+            }
+        }
+
+        function updateSendIcon() {
+            if (!isAuthReady) {
+                sendIcon.className = "fas fa-spinner fa-spin text-gray-400";
+                return;
+            }
+            sendIcon.className = messageInput.value.trim() !== "" ? "fas fa-paper-plane text-[#00a884]" : "fas fa-microphone";
+        }
+
+        // --- Event Handlers ---
+        document.getElementById('addContactBtn').onclick = () => {
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            setTimeout(() => document.getElementById('newContactName').focus(), 100);
+        };
+
+        document.getElementById('cancelModal').onclick = () => {
+            document.getElementById('modalOverlay').classList.add('hidden');
+        };
+
+        document.getElementById('saveContact').onclick = () => {
+            const nameInput = document.getElementById('newContactName');
+            const numInput = document.getElementById('newContactNumber');
+            const name = nameInput.value.trim();
+            const num = numInput.value.trim();
+            
+            if (name && num) {
+                const newC = { id: Date.now(), name, number: num };
+                contacts.unshift(newC);
+                renderContacts();
+                
+                nameInput.value = '';
+                numInput.value = '';
+                document.getElementById('modalOverlay').classList.add('hidden');
+                
+                if (currentUser && isAuthReady) {
+                    selectContact(newC.id);
+                }
+            }
+        };
+
+        messageInput.oninput = updateSendIcon;
+        messageInput.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } };
+        sendBtn.onclick = () => messageInput.value.trim() !== "" && sendMessage();
+        document.getElementById('logoutBtn').onclick = () => { localStorage.clear(); location.reload(); };
+
+        window.toggleSidebar = () => {
+            document.getElementById('sidebar').classList.remove('hidden');
+            document.getElementById('emptyState').classList.remove('hidden');
+            document.getElementById('chatHeader').classList.add('hidden');
+            messagesList.classList.add('hidden');
+            document.getElementById('chatInputArea').classList.add('hidden');
+            activeContactId = null;
+        };
+
+        renderContacts();
+    </script>
+</body>
+</html>
